@@ -2,9 +2,9 @@ import contextlib
 import io
 import json
 import pathlib
+import re
 import sys
 import tempfile
-import tomllib
 import unittest
 
 
@@ -62,9 +62,11 @@ class QubeForgeTests(unittest.TestCase):
         self.assertRegex(qubeforge.VERSION, r"^\d+\.\d+\.\d+$")
 
     def test_cli_version_matches_project_metadata(self):
-        with (ROOT / "pyproject.toml").open("rb") as handle:
-            metadata = tomllib.load(handle)
-        self.assertEqual(qubeforge.VERSION, metadata["project"]["version"])
+        pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        match = re.search(r'^version = "([^"]+)"$', pyproject, re.MULTILINE)
+
+        self.assertIsNotNone(match)
+        self.assertEqual(qubeforge.VERSION, match.group(1))
 
     def test_format_env_quotes_values_with_spaces(self):
         formatted = qubeforge.format_env({"QUBEFORGE_PACKAGES": "a b"})
