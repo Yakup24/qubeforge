@@ -1,0 +1,12 @@
+SPDX-License-Identifier: GPL-2.0-only
+
+QubeForge is distributed under the GNU General Public License version 2.
+
+This repository is derived from Qubes Linux template builder sources.  Qubes OS
+documents that its source repositories are made available under GPLv2 unless a
+repository-level LICENSE file specifies otherwise.
+
+The inherited RPM spec also declares `License: GPL`.
+
+Full GPLv2 text:
+https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt

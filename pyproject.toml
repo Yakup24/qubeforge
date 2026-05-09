@@ -4,10 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qubeforge-template-builder"
-version = "0.1.0"
+version = "0.2.0"
 description = "Profile-driven orchestration for Qubes OS Linux template builds."
 readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "GPL-2.0-only" }
 authors = [
   { name = "QubeForge maintainers" }
 ]
@@ -16,6 +17,7 @@ classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
   "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Topic :: System :: Installation/Setup",

@@ -25,3 +25,6 @@ jobs:
 
       - name: Validate profiles
         run: python qubeforge.py validate
+
+      - name: Run non-privileged doctor
+        run: python qubeforge.py doctor --profile debian-vault --skip-tools

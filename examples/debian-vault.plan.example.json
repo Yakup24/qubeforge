@@ -1,0 +1,47 @@
+{
+  "build": {
+    "dist": "debian-12",
+    "flavor": "vault",
+    "legacy_target": "rpms",
+    "options": [
+      "minimal",
+      "audit",
+      "hardened"
+    ]
+  },
+  "created_at": "2026-01-01T00:00:00Z",
+  "name": {
+    "max_length": 31,
+    "omitted_parts": [
+      "hardened"
+    ],
+    "selected_parts": [
+      "debian-12",
+      "vault",
+      "minimal",
+      "audit"
+    ]
+  },
+  "notes": "Security-focused Debian vault template for Qubes compartments.",
+  "payload": {
+    "packages": [
+      "qubes-core-agent",
+      "qubes-gpg-split",
+      "apparmor",
+      "auditd",
+      "nftables",
+      "vim-tiny"
+    ],
+    "repos": [
+      "qubes-current",
+      "debian-security"
+    ],
+    "services": [
+      "auditd",
+      "apparmor"
+    ]
+  },
+  "profile": "debian-vault",
+  "schema": "qubeforge.plan.v1",
+  "template_name": "debian-12-vault-minimal-audit"
+}

@@ -37,12 +37,13 @@ export DISTRIBUTION
 VERSION := $(shell cat version)
 TEMPLATE_TIMESTAMP ?= $(shell date -u +%Y%m%d%H%M)
 
-.PHONY: help qubeforge-profiles qubeforge-validate qubeforge-plan qubeforge-build test ci template-name prepare package rpms rootimg-build
+.PHONY: help qubeforge-profiles qubeforge-validate qubeforge-doctor qubeforge-plan qubeforge-build test ci template-name prepare package rpms rootimg-build
 .PHONY: update-repo-templates-itl update-repo-templates-community
 
 help:
 	@echo "make qubeforge-profiles         -- list QubeForge build profiles"
 	@echo "make qubeforge-validate         -- validate QubeForge build profiles"
+	@echo "make qubeforge-doctor           -- check host build readiness"
 	@echo "make qubeforge-plan PROFILE=x   -- render a QubeForge build plan"
 	@echo "make qubeforge-build PROFILE=x  -- run QubeForge build bridge"
 	@echo "make test                       -- run Python tests"
@@ -55,6 +56,9 @@ qubeforge-profiles:
 
 qubeforge-validate:
 	python3 qubeforge.py validate
+
+qubeforge-doctor:
+	python3 qubeforge.py doctor
 
 qubeforge-plan:
 	@test -n "$(PROFILE)" || (echo "Set PROFILE, e.g. PROFILE=debian-vault" && exit 1)

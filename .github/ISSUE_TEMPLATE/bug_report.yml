@@ -1,0 +1,36 @@
+name: Bug report
+description: Report a QubeForge problem
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Commands, profile, and host environment needed to reproduce.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: QubeForge version
+      placeholder: "qubeforge 0.2.0"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      render: text

@@ -16,6 +16,7 @@ import pathlib
 import platform
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -28,7 +29,8 @@ MANIFESTS_DIR = ROOT / "manifests"
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_.+-]*$")
 PLAN_SCHEMA = "qubeforge.plan.v1"
 MAX_TEMPLATE_NAME_LENGTH = 31
-VERSION = "0.1.0"
+VERSION = "0.2.0"
+BUILD_TOOLS = ("bash", "make", "sudo", "rpm", "rpmbuild")
 PROFILE_KEYS = frozenset(
     {
         "name",
@@ -48,6 +50,16 @@ class QubeForgeError(Exception):
 
 
 @dataclass(frozen=True)
+class PreflightReport:
+    errors: tuple[str, ...] = ()
+    warnings: tuple[str, ...] = ()
+
+    @property
+    def ok(self) -> bool:
+        return not self.errors
+
+
+@dataclass(frozen=True)
 class Profile:
     name: str
     dist: str
@@ -59,19 +71,29 @@ class Profile:
     notes: str
 
     @property
-    def template_name(self) -> str:
+    def name_parts(self) -> tuple[tuple[str, ...], tuple[str, ...]]:
         parts = [self.dist]
         if self.flavor:
             parts.append(self.flavor)
         parts.extend(self.options)
 
         selected: list[str] = []
+        omitted: list[str] = []
         for part in parts:
             candidate = "-".join([*selected, part])
             if selected and len(candidate) > MAX_TEMPLATE_NAME_LENGTH:
+                omitted.append(part)
+                continue
+            if not selected and len(candidate) > MAX_TEMPLATE_NAME_LENGTH:
+                selected.append(part[:MAX_TEMPLATE_NAME_LENGTH])
                 break
             selected.append(part)
 
+        return tuple(selected), tuple(omitted)
+
+    @property
+    def template_name(self) -> str:
+        selected, _omitted = self.name_parts
         return "-".join(selected)[:MAX_TEMPLATE_NAME_LENGTH]
 
     @property
@@ -162,11 +184,17 @@ def list_profiles() -> list[str]:
 
 def render_plan(profile: Profile) -> dict[str, Any]:
     timestamp = _dt.datetime.now(tz=_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    selected_parts, omitted_parts = profile.name_parts
     return {
         "schema": PLAN_SCHEMA,
         "created_at": timestamp,
         "profile": profile.name,
         "template_name": profile.template_name,
+        "name": {
+            "max_length": MAX_TEMPLATE_NAME_LENGTH,
+            "selected_parts": list(selected_parts),
+            "omitted_parts": list(omitted_parts),
+        },
         "build": {
             "dist": profile.dist,
             "flavor": profile.flavor,
@@ -183,8 +211,14 @@ def render_plan(profile: Profile) -> dict[str, Any]:
 
 
 def write_manifest(profile: Profile, plan: dict[str, Any]) -> pathlib.Path:
-    MANIFESTS_DIR.mkdir(exist_ok=True)
-    path = MANIFESTS_DIR / f"{profile.template_name}.plan.json"
+    return write_plan(plan, MANIFESTS_DIR / f"{profile.template_name}.plan.json")
+
+
+def write_plan(plan: dict[str, Any], path: pathlib.Path) -> pathlib.Path:
+    path = path.expanduser()
+    if not path.is_absolute():
+        path = ROOT / path
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return path
 
@@ -197,7 +231,60 @@ def format_env(env: dict[str, str]) -> str:
     return " ".join(f"{key}={shlex.quote(value)}" for key, value in env.items())
 
 
-def run_build(profile: Profile, manifest_path: pathlib.Path, dry_run: bool) -> int:
+def check_build_environment(
+    profile: Profile | None = None,
+    skip_tools: bool = False,
+) -> PreflightReport:
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    if profile is not None:
+        selected, omitted = profile.name_parts
+        if not selected:
+            errors.append("profile produced an empty template name")
+        if omitted:
+            warnings.append(
+                "template name omitted parts due to Qubes length limit: "
+                + ", ".join(omitted)
+            )
+
+    if not (ROOT / "Makefile").exists():
+        errors.append("Makefile not found")
+    if not (ROOT / "prepare_image").exists():
+        errors.append("prepare_image not found")
+    if not (ROOT / "qubeize_image").exists():
+        errors.append("qubeize_image not found")
+    if not (ROOT / "build_template_rpm").exists():
+        errors.append("build_template_rpm not found")
+
+    if platform.system() == "Windows":
+        errors.append("actual builds must run in a Linux/Qubes build environment")
+
+    if not skip_tools:
+        for tool in BUILD_TOOLS:
+            if shutil.which(tool) is None:
+                errors.append(f"required build tool not found on PATH: {tool}")
+
+    return PreflightReport(errors=tuple(errors), warnings=tuple(warnings))
+
+
+def print_check_results(report: PreflightReport) -> int:
+    if not report.errors and not report.warnings:
+        print("OK build environment preflight passed")
+        return 0
+    for warning in report.warnings:
+        print(f"WARN {warning}")
+    for error in report.errors:
+        print(f"ERROR {error}")
+    return 0 if report.ok else 1
+
+
+def run_build(
+    profile: Profile,
+    manifest_path: pathlib.Path,
+    dry_run: bool,
+    skip_preflight: bool = False,
+) -> int:
     env = os.environ.copy()
     env.update(profile.make_env)
     env["QUBEFORGE_MANIFEST"] = str(manifest_path)
@@ -209,8 +296,10 @@ def run_build(profile: Profile, manifest_path: pathlib.Path, dry_run: bool) -> i
         print("Dry run: " + " ".join(command))
         return 0
 
-    if platform.system() == "Windows":
-        raise QubeForgeError("actual builds must run in a Linux/Qubes build environment")
+    if not skip_preflight:
+        report = check_build_environment(profile)
+        if not report.ok:
+            raise QubeForgeError("preflight failed: " + "; ".join(report.errors))
 
     return subprocess.call(command, cwd=ROOT, env=env)
 
@@ -224,7 +313,10 @@ def command_profiles(_args: argparse.Namespace) -> int:
 def command_plan(args: argparse.Namespace) -> int:
     profile = load_profile(args.profile)
     plan = render_plan(profile)
-    if args.write:
+    if args.output:
+        path = write_plan(plan, pathlib.Path(args.output))
+        print(path)
+    elif args.write:
         path = write_manifest(profile, plan)
         print(path)
     else:
@@ -243,12 +335,22 @@ def command_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_doctor(args: argparse.Namespace) -> int:
+    profile = load_profile(args.profile) if args.profile else None
+    return print_check_results(check_build_environment(profile, skip_tools=args.skip_tools))
+
+
 def command_build(args: argparse.Namespace) -> int:
     profile = load_profile(args.profile)
     plan = render_plan(profile)
     path = write_manifest(profile, plan)
     print(f"Wrote {path}")
-    return run_build(profile, manifest_path=path, dry_run=args.dry_run)
+    return run_build(
+        profile,
+        manifest_path=path,
+        dry_run=args.dry_run,
+        skip_preflight=args.skip_preflight,
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -265,15 +367,22 @@ def build_parser() -> argparse.ArgumentParser:
     plan = sub.add_parser("plan", help="render a build plan")
     plan.add_argument("profile", help="profile name from profiles/*.json")
     plan.add_argument("--write", action="store_true", help="write plan into manifests/")
+    plan.add_argument("--output", help="write plan to a specific path")
     plan.set_defaults(func=command_plan)
 
     validate = sub.add_parser("validate", help="validate one profile or all profiles")
     validate.add_argument("profile", nargs="?", help="profile name from profiles/*.json")
     validate.set_defaults(func=command_validate)
 
+    doctor = sub.add_parser("doctor", help="check host build readiness")
+    doctor.add_argument("--profile", help="profile name from profiles/*.json")
+    doctor.add_argument("--skip-tools", action="store_true", help="skip PATH tool checks")
+    doctor.set_defaults(func=command_doctor)
+
     build = sub.add_parser("build", help="write a manifest and run the build")
     build.add_argument("profile", help="profile name from profiles/*.json")
     build.add_argument("--dry-run", action="store_true", help="show the legacy command only")
+    build.add_argument("--skip-preflight", action="store_true", help="run without doctor checks")
     build.set_defaults(func=command_build)
 
     return parser

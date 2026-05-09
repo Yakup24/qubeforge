@@ -7,6 +7,7 @@ QubeForge provides a safer front door:
 - JSON profiles in `profiles/`
 - deterministic build manifests in `manifests/`
 - validation before privileged work
+- host readiness checks with `doctor`
 - dry-run support before privileged build steps
 - a single CLI for listing, planning, and building
 
@@ -30,10 +31,22 @@ Validate profiles:
 python3 qubeforge.py validate
 ```
 
+Check host build readiness:
+
+```sh
+python3 qubeforge.py doctor --profile debian-vault
+```
+
 Render a plan:
 
 ```sh
 python3 qubeforge.py plan debian-vault
+```
+
+Write a plan to a custom path:
+
+```sh
+python3 qubeforge.py plan debian-vault --output /tmp/debian-vault.plan.json
 ```
 
 Write a manifest without building:
@@ -82,6 +95,11 @@ target by exporting:
 - `QUBEFORGE_SERVICES`
 - `QUBEFORGE_REPOS`
 - `QUBEFORGE_MANIFEST`
+
+The plan also reports which name parts were selected or omitted to stay inside
+Qubes' 31-character VM name limit.
+
+See `examples/debian-vault.plan.example.json` for a checked-in sample plan.
 
 ## Build Environment
 

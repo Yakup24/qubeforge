@@ -1,5 +1,7 @@
 # QubeForge Template Builder
 
+[![CI](https://github.com/Yakup24/qubeforge/actions/workflows/ci.yml/badge.svg)](https://github.com/Yakup24/qubeforge/actions/workflows/ci.yml)
+
 QubeForge is a profile-driven orchestration layer for Qubes OS Linux template
 builds.  It keeps the existing low-level image and RPM scripts in place, then
 adds a clean command-line interface for profile validation, deterministic plan
@@ -14,6 +16,7 @@ builder; `--dry-run` is available for safe review on any development machine.
 - JSON profiles for repeatable template definitions
 - deterministic build plans written to `manifests/`
 - profile validation before privileged build work
+- host preflight checks with `doctor`
 - `QUBEFORGE_*` environment handoff for custom build plugins
 - Makefile targets for common workflows
 - Python unit tests and GitHub Actions CI
@@ -39,10 +42,22 @@ Validate all profiles:
 python3 qubeforge.py validate
 ```
 
+Check host build readiness:
+
+```sh
+python3 qubeforge.py doctor --profile debian-vault
+```
+
 Render a plan:
 
 ```sh
 python3 qubeforge.py plan debian-vault
+```
+
+Write a plan to a specific file:
+
+```sh
+python3 qubeforge.py plan debian-vault --output /tmp/debian-vault.plan.json
 ```
 
 Write a manifest without building:
@@ -77,6 +92,7 @@ qubeforge validate
 ```sh
 make qubeforge-profiles
 make qubeforge-validate
+make qubeforge-doctor
 make qubeforge-plan PROFILE=debian-vault
 make qubeforge-build PROFILE=debian-vault
 make test
@@ -106,6 +122,8 @@ The generated template name is kept within Qubes' 31-character VM name limit.
 - `qubeforge.py` is the orchestration CLI.
 - `profiles/` contains template profiles and `schema.json`.
 - `docs/QUBEFORGE.md` contains deeper usage notes.
+- `docs/BUILD_ENVIRONMENT.md` documents host preflight expectations.
+- `examples/` contains checked-in sample outputs.
 - `manifests/` contains generated build plans and is ignored by Git.
 - `prepare_image`, `qubeize_image`, and `build_template_rpm` remain the
   low-level build primitives.
@@ -128,6 +146,4 @@ python3 qubeforge.py build debian-vault --dry-run
 
 ## Publishing Notes
 
-Before publishing a public repository, choose the exact root license file you
-want to ship.  The inherited RPM spec declares `GPL`, but this snapshot did not
-include a root `LICENSE` file.
+The inherited Qubes source licensing model is documented in `LICENSE`.
