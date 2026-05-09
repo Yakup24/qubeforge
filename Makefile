@@ -20,7 +20,9 @@ TEMPLATE_ENV_WHITELIST += \
 	TEMPLATE_ROOT_WITH_PARTITIONS TEMPLATE_ROOT_SIZE \
 	USE_QUBES_REPO_VERSION USE_QUBES_REPO_TESTING \
 	BUILDER_TURBO_MODE REPO_PROXY FEDORA_MIRROR \
-	CENTOS_MIRROR EPEL_MIRROR QUBES_MIRROR
+	CENTOS_MIRROR EPEL_MIRROR QUBES_MIRROR \
+	QUBEFORGE_PROFILE QUBEFORGE_PACKAGES QUBEFORGE_SERVICES \
+	QUBEFORGE_REPOS QUBEFORGE_MANIFEST
 
 # Make sure names are < 32 characters, process aliases
 fix_up := $(shell TEMPLATE_NAME=$(TEMPLATE_NAME) \
@@ -35,13 +37,37 @@ export DISTRIBUTION
 VERSION := $(shell cat version)
 TEMPLATE_TIMESTAMP ?= $(shell date -u +%Y%m%d%H%M)
 
-.PHONY: help template-name prepare package rpms rootimg-build
+.PHONY: help qubeforge-profiles qubeforge-validate qubeforge-plan qubeforge-build test ci template-name prepare package rpms rootimg-build
 .PHONY: update-repo-templates-itl update-repo-templates-community
 
 help:
+	@echo "make qubeforge-profiles         -- list QubeForge build profiles"
+	@echo "make qubeforge-validate         -- validate QubeForge build profiles"
+	@echo "make qubeforge-plan PROFILE=x   -- render a QubeForge build plan"
+	@echo "make qubeforge-build PROFILE=x  -- run QubeForge build bridge"
+	@echo "make test                       -- run Python tests"
 	@echo "make rpms                  -- generate template rpm"
 	@echo "make update-repo-installer -- copy newly generated rpm to installer repo"
 	@echo "make clean                 -- remove all files and directories built or added"
+
+qubeforge-profiles:
+	python3 qubeforge.py profiles
+
+qubeforge-validate:
+	python3 qubeforge.py validate
+
+qubeforge-plan:
+	@test -n "$(PROFILE)" || (echo "Set PROFILE, e.g. PROFILE=debian-vault" && exit 1)
+	python3 qubeforge.py plan "$(PROFILE)"
+
+qubeforge-build:
+	@test -n "$(PROFILE)" || (echo "Set PROFILE, e.g. PROFILE=debian-vault" && exit 1)
+	python3 qubeforge.py build "$(PROFILE)"
+
+test:
+	python3 -m unittest discover -s tests -p "test_*.py"
+
+ci: test qubeforge-validate
 
 template-name:
 	@echo $(TEMPLATE_NAME)

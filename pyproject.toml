@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qubeforge-template-builder"
+version = "0.1.0"
+description = "Profile-driven orchestration for Qubes OS Linux template builds."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "QubeForge maintainers" }
+]
+keywords = ["qubes", "template", "linux", "rpm", "build"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: System Administrators",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: System :: Installation/Setup",
+  "Topic :: System :: Operating System"
+]
+
+[project.scripts]
+qubeforge = "qubeforge:main"
+
+[tool.setuptools]
+py-modules = ["qubeforge"]

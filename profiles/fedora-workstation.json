@@ -1,0 +1,26 @@
+{
+  "name": "fedora-workstation",
+  "dist": "fedora-40",
+  "flavor": "studio",
+  "options": [
+    "devtools",
+    "containers"
+  ],
+  "packages": [
+    "qubes-core-agent",
+    "git",
+    "make",
+    "podman",
+    "python3",
+    "python3-pip",
+    "ripgrep"
+  ],
+  "services": [
+    "podman.socket"
+  ],
+  "repos": [
+    "qubes-current",
+    "fedora-updates"
+  ],
+  "notes": "Fedora workstation template profile with development and container tooling."
+}

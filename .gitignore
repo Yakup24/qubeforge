@@ -6,3 +6,14 @@ build_timestamp_*
 install-templates.sh
 pkgs-for-template/*
 cache_*/
+__pycache__/
+manifests/
+*.py[cod]
+*.egg-info/
+.coverage
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+build/
+dist/

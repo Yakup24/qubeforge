@@ -1,0 +1,10 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+Makefile text eol=lf
+*.sh text eol=lf
+prepare_image text eol=lf
+qubeize_image text eol=lf
+build_template_rpm text eol=lf
+cleanup_image text eol=lf
+builder_* text eol=lf

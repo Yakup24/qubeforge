@@ -1,0 +1,27 @@
+{
+  "name": "debian-vault",
+  "dist": "debian-12",
+  "flavor": "vault",
+  "options": [
+    "minimal",
+    "audit",
+    "hardened"
+  ],
+  "packages": [
+    "qubes-core-agent",
+    "qubes-gpg-split",
+    "apparmor",
+    "auditd",
+    "nftables",
+    "vim-tiny"
+  ],
+  "services": [
+    "auditd",
+    "apparmor"
+  ],
+  "repos": [
+    "qubes-current",
+    "debian-security"
+  ],
+  "notes": "Security-focused Debian vault template for Qubes compartments."
+}

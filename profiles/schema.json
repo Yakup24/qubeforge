@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "QubeForge Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "dist"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_.+-]*$"
+    },
+    "dist": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_.+-]*$"
+    },
+    "flavor": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_.+-]*$"
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9_.+-]*$"
+      },
+      "default": []
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "repos": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "notes": {
+      "type": "string",
+      "default": ""
+    }
+  }
+}
