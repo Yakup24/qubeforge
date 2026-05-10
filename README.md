@@ -2,14 +2,25 @@
 
 [![CI](https://github.com/Yakup24/qubeforge/actions/workflows/ci.yml/badge.svg)](https://github.com/Yakup24/qubeforge/actions/workflows/ci.yml)
 
-QubeForge is a profile-driven orchestration layer for Qubes OS Linux template
-builds.  It keeps the existing low-level image and RPM scripts in place, then
-adds a clean command-line interface for profile validation, deterministic plan
-generation, and controlled handoff to `make rpms`.
+QubeForge adds a small profile layer to an inherited Qubes Linux template
+builder. Profiles describe the distribution, flavor, packages, services, and
+repository inputs for a template. The CLI validates those profiles, writes a
+build plan, and then hands off to the existing `make rpms` path.
 
-This project is intended for Linux/Qubes build environments.  Running a real
-template build requires the same privileges and tooling as the original template
-builder; `--dry-run` is available for safe review on any development machine.
+The legacy image and RPM scripts still do the privileged work. QubeForge is the
+operator-facing layer in front of them: it makes intent explicit before a build
+touches root images or packaging steps.
+
+Real builds are meant to run in a Linux/Qubes build environment. On other
+machines, use `--dry-run`, `validate`, and `doctor --skip-tools` to review
+profiles and generated plans without starting privileged image work.
+
+## Status
+
+This is an early orchestration layer, not a replacement for the Qubes builder.
+The current focus is profile validation, reproducible plan output, and safe
+handoff into the existing scripts. A full Linux/Qubes build verification is
+tracked in `ROADMAP.md`.
 
 ## Features
 
